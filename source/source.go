@@ -6,14 +6,15 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
-	"github.com/dropbox/godropbox/errors"
-	"github.com/pacur/pacur/utils"
 	"hash"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/dropbox/godropbox/errors"
+	"github.com/pacur/pacur/utils"
 )
 
 const (
@@ -47,7 +48,16 @@ func (s *Source) getUrl() (err error) {
 	}
 
 	if !exists {
-		err = utils.HttpGet(s.Source, s.Path)
+		if strings.HasSuffix(s.Path, ".git") {
+			user := os.Getenv("GIT_USER")
+			token := os.Getenv("GIT_TOKEN")
+			branch := os.Getenv("GIT_BRANCH")
+
+			path := strings.ReplaceAll(s.Path, ".git", "")
+			err = utils.GitClone(s.Source, branch, user, token, path)
+		} else {
+			err = utils.HttpGet(s.Source, s.Path)
+		}
 		if err != nil {
 			return
 		}
@@ -72,6 +82,8 @@ func (s *Source) extract() (err error) {
 		cmd = exec.Command("tar", "--no-same-owner", "-xf", s.Path)
 	} else if strings.HasSuffix(s.Path, ".zip") {
 		cmd = exec.Command("unzip", s.Path)
+	} else if strings.HasSuffix(s.Path, ".git") {
+		return
 	} else {
 		split := strings.Split(s.Path, ".")
 		if len(split) > 2 && split[len(split)-2] == "tar" {

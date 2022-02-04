@@ -111,6 +111,14 @@ key:ubuntu="this will apply only to ubuntu builds"
 | `prerm` | `func` | Function to run before removing |
 | `postrm` | `func` | Function to run after removing |
 
+### environment variables
+
+| key | value |
+| --- | ----- |
+| `$GIT_BRANCH` | `Git branch` the branch to check out, defaults to `main`|
+| `$GIT_USER` | `Git user` the user for http basic auth, optional |
+| `$GIT_PAT` | `Git pat` the personal access token for http basic auth, optional |
+
 ### build targets
 
 | target | value |
