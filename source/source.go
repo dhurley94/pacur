@@ -20,6 +20,7 @@ import (
 const (
 	path = 0
 	url  = 1
+	git  = 2
 )
 
 type Source struct {
@@ -31,6 +32,9 @@ type Source struct {
 }
 
 func (s *Source) getType() int {
+	if strings.HasSuffix(s.Path, ".git") {
+		return git
+	}
 	if strings.HasPrefix(s.Source, "http") {
 		return url
 	}
@@ -48,16 +52,28 @@ func (s *Source) getUrl() (err error) {
 	}
 
 	if !exists {
-		if strings.HasSuffix(s.Path, ".git") {
-			user := os.Getenv("GIT_USER")
-			token := os.Getenv("GIT_TOKEN")
-			branch := os.Getenv("GIT_BRANCH")
-
-			path := strings.ReplaceAll(s.Path, ".git", "")
-			err = utils.GitClone(s.Source, branch, user, token, path)
-		} else {
-			err = utils.HttpGet(s.Source, s.Path)
+		err = utils.HttpGet(s.Source, s.Path)
+		if err != nil {
+			return
 		}
+	}
+
+	return
+}
+
+func (s *Source) getRepo() (err error) {
+	exists, err := utils.Exists(s.Path)
+	if err != nil {
+		return
+	}
+
+	if !exists {
+		user := os.Getenv("GIT_USER")
+		token := os.Getenv("GIT_TOKEN")
+		branch := os.Getenv("GIT_BRANCH")
+
+		path := strings.ReplaceAll(s.Path, ".git", "")
+		err = utils.GitClone(s.Source, branch, user, token, path)
 		if err != nil {
 			return
 		}
@@ -167,6 +183,8 @@ func (s *Source) Get() (err error) {
 		err = s.getUrl()
 	case path:
 		err = s.getPath()
+	case git:
+		err = s.getRepo()
 	default:
 		panic("utils: Unknown type")
 	}
