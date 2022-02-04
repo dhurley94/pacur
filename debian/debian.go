@@ -2,13 +2,14 @@ package debian
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/dropbox/godropbox/errors"
 	"github.com/pacur/pacur/constants"
 	"github.com/pacur/pacur/pack"
 	"github.com/pacur/pacur/utils"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 type Debian struct {
@@ -83,9 +84,10 @@ func (d *Debian) createConfFiles() (err error) {
 func (d *Debian) createControl() (err error) {
 	path := filepath.Join(d.debDir, "control")
 
+	pkgName := strings.ReplaceAll(d.Pack.PkgName, "_", "-")
 	data := ""
 
-	data += fmt.Sprintf("Package: %s\n", d.Pack.PkgName)
+	data += fmt.Sprintf("Package: %s\n", pkgName)
 	data += fmt.Sprintf("Version: %s-0%s%s~%s\n",
 		d.Pack.PkgVer, d.Pack.Distro, d.Pack.PkgRel, d.Pack.Release)
 	data += fmt.Sprintf("Architecture: %s\n", d.Pack.Arch)
@@ -206,11 +208,13 @@ func (d *Debian) dpkgDeb() (err error) {
 		return
 	}
 
+	pkgName := strings.ReplaceAll(d.Pack.PkgName, "_", "-")
+
 	_, dir := filepath.Split(filepath.Clean(d.Pack.PackageDir))
 	path := filepath.Join(d.Pack.Root, dir+".deb")
 	newPath := filepath.Join(d.Pack.Home,
 		fmt.Sprintf("%s_%s-0%s%s.%s_%s.deb",
-			d.Pack.PkgName, d.Pack.PkgVer, d.Pack.Distro, d.Pack.PkgRel,
+			pkgName, d.Pack.PkgVer, d.Pack.Distro, d.Pack.PkgRel,
 			d.Pack.Release, d.Pack.Arch))
 
 	os.Remove(newPath)
